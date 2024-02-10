@@ -1,5 +1,3 @@
-# dev
-
 # Set your project
 ```bash
 export PROJECT_ID=<INSERT_YOUR_PROJECT_ID>
