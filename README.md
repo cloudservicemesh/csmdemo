@@ -1,13 +1,11 @@
 # csmdemo
 
-# post-cluster creation
-
-# environment
-
+### environment / context
 ```
 export PROJECT=csm001
 export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT} --format="value(projectNumber)")
 gcloud config set project ${PROJECT}
+### replace the following section as needed
 export REGION_1=us-central1
 export REGION_2=us-west2
 export CONFIG_CLUSTER=gke-config-improved-donkey
@@ -55,4 +53,19 @@ kubectl config rename-context gke_${PROJECT}_${REGION_2}-a_${CLUSTER_US_WEST2_A}
 gcloud container clusters get-credentials ${CLUSTER_US_WEST2_B} \
     --zone ${REGION_2}-b
 kubectl config rename-context gke_${PROJECT}_${REGION_2}-b_${CLUSTER_US_WEST2_B} gke-us-west2-1
+```
+
+### create cluster ingress
+```
+# namespace setup
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT create namespace asm-ingress
+    kubectl --context=$CONTEXT label namespace asm-ingress istio-injection=enabled
+done
+
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do
+    kubectl --context $CONTEXT apply -k ${WORKDIR}/asm-ig/variant
+done
 ```
