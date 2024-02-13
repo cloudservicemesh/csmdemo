@@ -58,7 +58,7 @@ kubectl config rename-context gke_${PROJECT}_${REGION_2}-b_${CLUSTER_US_WEST2_B}
 ### create cluster ingress
 ```
 # namespace setup
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in gke-config gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT create namespace asm-ingress
     kubectl --context=$CONTEXT label namespace asm-ingress istio-injection=enabled
@@ -129,9 +129,27 @@ gcloud compute security-policies rules create 1000 \
     --action "deny-403" \
     --description "XSS attack filtering"
 
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in gke-config gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do
     kubectl --context $CONTEXT apply -f ${WORKDIR}/policies/cloud-armor.yaml
     kubectl --context $CONTEXT apply -f ${WORKDIR}/policies/ingress-gateway-healthcheck.yaml
 done
+```
+
+### designate config cluster for fleet
+```
+# use update instead of enable to change this value
+gcloud container fleet ingress enable \
+  --config-membership=gke-config
+
+gcloud projects add-iam-policy-binding ${PROJECT} \
+    --member "serviceAccount:service-${PROJECT_NUMBER}@gcp-sa-multiclusteringress.iam.gserviceaccount.com" \
+    --role "roles/container.admin"
+```
+
+### deploy the gateway (LB) & HTTPRoute resources to the config cluster
+```
+kubectl --context=gke-config apply -f ${WORKDIR}/gateway/frontend-gateway.yaml
+kubectl --context=gke-config apply -f ${WORKDIR}/gateway/default-httproute.yaml
+kubectl --context=gke-config apply -f ${WORKDIR}/gateway/default-httproute-redirect.yaml
 ```
