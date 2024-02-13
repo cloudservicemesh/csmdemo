@@ -164,6 +164,23 @@ done
 
 ### deploy demo `whereami` app for both frontend and backend
 ```
+# create GSA for writing traces 
+gcloud iam service-accounts create whereami-tracer \
+    --project=csm001
+
+gcloud projects add-iam-policy-binding csm001 \
+    --member "serviceAccount:whereami-tracer@csm001.iam.gserviceaccount.com" \
+    --role "roles/cloudtrace.agent"
+
+# map to KSAs
+gcloud iam service-accounts add-iam-policy-binding whereami-tracer@csm001.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:csm001.svc.id.goog[frontend/whereami-frontend]"
+
+gcloud iam service-accounts add-iam-policy-binding whereami-tracer@csm001.iam.gserviceaccount.com \
+    --role roles/iam.workloadIdentityUser \
+    --member "serviceAccount:csm001.svc.id.goog[backend/whereami-backend]"
+
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT create ns backend

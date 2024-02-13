@@ -11,3 +11,6 @@ patches:
 - path: service-type.yaml
   target:
     kind: Service
+- path: ksa-annotation.yaml
+  target:
+    kind: ServiceAccount
