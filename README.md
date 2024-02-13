@@ -69,3 +69,18 @@ do
     kubectl --context $CONTEXT apply -k ${WORKDIR}/asm-ig/variant
 done
 ```
+
+### enable MCS
+```
+gcloud container fleet multi-cluster-services enable
+
+gcloud projects add-iam-policy-binding csm001 \
+ --member "serviceAccount:csm001.svc.id.goog[gke-mcs/gke-mcs-importer]" \
+ --role "roles/compute.networkViewer"
+
+# this can take a while to be ready - otherwise you'll get a warning about making sure CRDs are installed first
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do
+    kubectl --context $CONTEXT apply -f ${WORKDIR}/mcs/svc_export.yaml
+done
+```
