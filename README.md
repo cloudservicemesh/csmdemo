@@ -153,3 +153,35 @@ kubectl --context=gke-config apply -f ${WORKDIR}/gateway/frontend-gateway.yaml
 kubectl --context=gke-config apply -f ${WORKDIR}/gateway/default-httproute.yaml
 kubectl --context=gke-config apply -f ${WORKDIR}/gateway/default-httproute-redirect.yaml
 ```
+
+### enable Cloud Trace & Access Logging on the mesh
+```
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context $CONTEXT apply -f ${WORKDIR}/observability/enable.yaml
+done
+```
+
+### deploy demo `whereami` app for both frontend and backend
+```
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT create ns backend
+    kubectl --context=$CONTEXT label namespace backend istio-injection=enabled
+    kubectl --context=$CONTEXT create ns frontend
+    kubectl --context=$CONTEXT label namespace frontend istio-injection=enabled
+    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant
+    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-frontend/variant
+done
+
+# set up virtualServices
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT apply -f ${WORKDIR}/whereami-frontend/frontend-vs.yaml
+done
+```
+
+### test endpoint
+```
+curl -s https://frontend.endpoints.csm001.cloud.goog | jq
+```
