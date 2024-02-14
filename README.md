@@ -181,6 +181,12 @@ gcloud iam service-accounts add-iam-policy-binding whereami-tracer@csm001.iam.gs
     --role roles/iam.workloadIdentityUser \
     --member "serviceAccount:csm001.svc.id.goog[backend/whereami-backend]"
 
+# or do i need to manually add to TF-generated SAs?
+gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-central1-06ab@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
+gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-central1-hl8c@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
+gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-west2-a--bllw@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
+gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-west2-b--8ptm@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
+
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT create ns backend
@@ -200,5 +206,5 @@ done
 
 ### test endpoint
 ```
-curl -s https://frontend.endpoints.csm001.cloud.goog | jq
+watch -n 0.1 'curl -s https://frontend.endpoints.csm001.cloud.goog | jq'
 ```
