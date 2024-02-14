@@ -216,6 +216,15 @@ done
 watch -n 0.1 'curl -s https://frontend.endpoints.csm001.cloud.goog | jq'
 ```
 
+### enable locality
+```
+# apply destinationRules
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT apply -f ${WORKDIR}/locality/
+done
+```
+
 ### scratch 
 ```
 # restart backend pods
