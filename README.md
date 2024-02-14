@@ -163,6 +163,7 @@ do
 done
 
 # so we use the telemetry API instead
+# note: at CSM launch, tracing only samples @ 1%
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context $CONTEXT apply -f ${WORKDIR}/observability/telemetry-for-tracing.yaml
