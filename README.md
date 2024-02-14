@@ -156,9 +156,16 @@ kubectl --context=gke-config apply -f ${WORKDIR}/gateway/default-httproute-redir
 
 ### enable Cloud Trace & Access Logging on the mesh
 ```
+# this specific section only seems to enable access logging, not tracing, as this requires allow-listing
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context $CONTEXT apply -f ${WORKDIR}/observability/enable.yaml
+done
+
+# so we use the telemetry API instead
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context $CONTEXT apply -f ${WORKDIR}/observability/telemetry-for-tracing.yaml
 done
 ```
 
@@ -207,4 +214,19 @@ done
 ### test endpoint
 ```
 watch -n 0.1 'curl -s https://frontend.endpoints.csm001.cloud.goog | jq'
+```
+
+### scratch 
+```
+# restart backend pods
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT -n backend rollout restart deployment whereami-backend
+done
+
+# restart frontend pods
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT -n frontend rollout restart deployment whereami-frontend
+done
 ```
