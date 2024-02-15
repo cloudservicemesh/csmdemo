@@ -226,7 +226,7 @@ do
 done
 ```
 
-### enable peer auth (mTLS)
+### set strict peer auth (mTLS) policy
 ```
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
