@@ -198,7 +198,7 @@ do
 done
 ```
 
-### set up AuthorizationPolicy for ingress gateway & frontend workload
+### deploy AuthorizationPolicy for ingress gateway & frontend workload
 ```
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
@@ -235,6 +235,14 @@ watch -n 0.1 'curl -s https://frontend.endpoints.csm001.cloud.goog | jq'
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v1
+done
+```
+
+### deploy AuthorizationPolicy for backend workload
+```
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT apply -f ${WORKDIR}/authz/backend.yaml
 done
 ```
 
