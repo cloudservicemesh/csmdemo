@@ -272,6 +272,10 @@ do
 done
 ```
 
+### demo traffic splitting for backend from v1 to v2
+```
+```
+
 ### scratch 
 ```
 # restart ingress gateway pods
@@ -314,15 +318,7 @@ done
 
 ### don't use
 ```
-# or do i need to manually add to TF-generated SAs? (don't think so)
-#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-central1-06ab@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
-#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-central1-hl8c@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
-#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-west2-a--bllw@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
-#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-west2-b--8ptm@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
-```
-
-### set strict peer auth (mTLS) policy
-```
+# set strict peer auth (mTLS) policy
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT -n frontend apply -f ${WORKDIR}/mtls/
