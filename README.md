@@ -255,4 +255,11 @@ do
     kubectl --context=$CONTEXT -n frontend delete -f ${WORKDIR}/mtls/
     kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/mtls/
 done
+
+# remove locality 
+# apply destinationRules
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT delete -f ${WORKDIR}/locality/
+done
 ```
