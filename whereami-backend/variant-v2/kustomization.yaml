@@ -1,4 +1,4 @@
-nameSuffix: "-backend"
+nameSuffix: "-backend-v2"
 namespace: backend
 commonLabels:
   app: whereami-backend

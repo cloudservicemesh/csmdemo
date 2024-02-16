@@ -2,6 +2,7 @@ nameSuffix: "-backend"
 namespace: backend
 commonLabels:
   app: whereami-backend
+  version: v1
 resources:
 - ../base
 patches:
@@ -14,6 +15,3 @@ patches:
 - path: ksa-annotation.yaml
   target:
     kind: ServiceAccount
-- path: deployment.yaml
-  target:
-    kind: Deployment
