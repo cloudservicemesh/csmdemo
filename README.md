@@ -170,7 +170,7 @@ do
 done
 ```
 
-### deploy demo `whereami` app for both frontend and backend
+### deploy demo `whereami` app for both frontend and backend-v1
 ```
 # create GSA for writing traces 
 gcloud iam service-accounts create whereami-tracer \
@@ -189,19 +189,13 @@ gcloud iam service-accounts add-iam-policy-binding whereami-tracer@csm001.iam.gs
     --role roles/iam.workloadIdentityUser \
     --member "serviceAccount:csm001.svc.id.goog[backend/whereami-backend]"
 
-# or do i need to manually add to TF-generated SAs? (don't think so)
-#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-central1-06ab@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
-#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-central1-hl8c@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
-#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-west2-a--bllw@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
-#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-west2-b--8ptm@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
-
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT create ns backend
     kubectl --context=$CONTEXT label namespace backend istio-injection=enabled
     kubectl --context=$CONTEXT create ns frontend
     kubectl --context=$CONTEXT label namespace frontend istio-injection=enabled
-    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant
+    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v1
     kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-frontend/variant
 done
 
@@ -257,9 +251,17 @@ do
 done
 
 # remove locality 
-# apply destinationRules
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT delete -f ${WORKDIR}/locality/
 done
+```
+
+### don't use
+```
+# or do i need to manually add to TF-generated SAs? (don't think so)
+#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-central1-06ab@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
+#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-central1-hl8c@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
+#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-west2-a--bllw@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
+#gcloud projects add-iam-policy-binding csm001     --member "serviceAccount:tf-gke-gke-us-west2-b--8ptm@csm001.iam.gserviceaccount.com"     --role "roles/cloudtrace.agent"
 ```
