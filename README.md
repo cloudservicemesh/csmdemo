@@ -248,7 +248,7 @@ done
 
 ### enable locality
 ```
-# apply destinationRules
+# apply destinationRules for locality
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT apply -f ${WORKDIR}/locality/
@@ -256,6 +256,21 @@ done
 ```
 
 > note: after some time, demonstrate delta in trace latency
+
+### test resiliency by 'failing' us-central1 ingress gateway pods
+```
+# first scale to zero to show failover
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 
+do 
+    kubectl --context=$CONTEXT -n asm-ingress scale --replicas=0 deployment/asm-ingressgateway
+done
+
+# then scale back up to restore ingress gateways in local region
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 
+do 
+    kubectl --context=$CONTEXT -n asm-ingress scale --replicas=3 deployment/asm-ingressgateway
+done
+```
 
 ### scratch 
 ```
