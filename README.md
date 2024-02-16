@@ -170,7 +170,7 @@ do
 done
 ```
 
-### deploy demo `whereami` app for both frontend and backend-v1
+### prepare workloads for tracing via Workload Identity
 ```
 # create GSA for writing traces 
 gcloud iam service-accounts create whereami-tracer \
@@ -188,18 +188,37 @@ gcloud iam service-accounts add-iam-policy-binding whereami-tracer@csm001.iam.gs
 gcloud iam service-accounts add-iam-policy-binding whereami-tracer@csm001.iam.gserviceaccount.com \
     --role roles/iam.workloadIdentityUser \
     --member "serviceAccount:csm001.svc.id.goog[backend/whereami-backend]"
+```
 
+### configure default cluster-wide `ALLOW NONE` AuthorizationPolicy
+```
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context $CONTEXT apply -f ${WORKDIR}/authz/allow-none.yaml
+done
+```
+
+### set up AuthorizationPolicy for ingress gateway & frontend workload
+```
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT apply -f ${WORKDIR}/authz/asm-ingress.yaml
+    kubectl --context=$CONTEXT apply -f ${WORKDIR}/authz/frontend.yaml
+done
+```
+
+### deploy demo `whereami` app for frontend and scaffolding for backend-v1
+```
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT create ns backend
     kubectl --context=$CONTEXT label namespace backend istio-injection=enabled
     kubectl --context=$CONTEXT create ns frontend
     kubectl --context=$CONTEXT label namespace frontend istio-injection=enabled
-    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v1
     kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-frontend/variant
 done
 
-# set up virtualServices
+# set up virtualService
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT apply -f ${WORKDIR}/whereami-frontend/frontend-vs.yaml
@@ -209,6 +228,14 @@ done
 ### test endpoint
 ```
 watch -n 0.1 'curl -s https://frontend.endpoints.csm001.cloud.goog | jq'
+```
+
+### deploy demo `whereami` app for backend-v1
+```
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v1
+done
 ```
 
 ### enable locality
@@ -231,6 +258,12 @@ done
 
 ### scratch 
 ```
+# restart ingress gateway pods
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT -n asm-ingress rollout restart deployment asm-ingressgateway
+done
+
 # restart backend pods
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
@@ -241,6 +274,12 @@ done
 for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
 do 
     kubectl --context=$CONTEXT -n frontend rollout restart deployment whereami-frontend
+done
+
+# remove backend service
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT delete -k ${WORKDIR}/whereami-backend/variant-v1
 done
 
 # remove PeerAuthentication policy
