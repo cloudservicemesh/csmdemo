@@ -274,6 +274,18 @@ done
 
 ### demo traffic splitting for backend from v1 to v2
 ```
+# start by deploying subsets and 0% to v2
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/subsets-dr.yaml
+    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-0.yaml
+done
+
+# deploy v2 of backend service
+for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+do 
+    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v2
+done
 ```
 
 ### scratch 
