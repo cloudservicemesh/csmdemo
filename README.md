@@ -1,6 +1,61 @@
 # csmdemo
 
-### environment / context
+### new environment / context for ASM
+```
+export PROJECT=mesh-demo-01
+export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT} --format="value(projectNumber)")
+gcloud config set project ${PROJECT}
+
+# set up kubeconfig
+cd ${HOME}/csmdemo
+export WORKDIR=`pwd`
+# touch csmdemo_kubeconfig # only need this once
+export KUBECONFIG=${WORKDIR}/csmdemo_kubeconfig
+
+# make stuff easier to read
+gcloud config set accessibility/screen_reader false
+
+# make sure APIs are enabled
+gcloud services enable \
+  container.googleapis.com \
+  mesh.googleapis.com \
+  gkehub.googleapis.com \
+  multiclusterservicediscovery.googleapis.com \
+  multiclusteringress.googleapis.com \
+  trafficdirector.googleapis.com \
+  certificatemanager.googleapis.com \
+  cloudtrace.googleapis.com
+
+export CLUSTER_1_NAME=edge-to-mesh-01
+export CLUSTER_2_NAME=edge-to-mesh-02
+export CLUSTER_1_REGION=us-central1
+export CLUSTER_2_REGION=us-east4
+export PUBLIC_ENDPOINT=frontend.endpoints.${PROJECT}.cloud.goog
+
+# using Argolis, so need to create default VPC
+gcloud compute networks create default --project=${PROJECT} --subnet-mode=auto --mtu=1460 --bgp-routing-mode=regional
+
+# create clusters
+gcloud container clusters create-auto --async \
+${CLUSTER_1_NAME} --region ${CLUSTER_1_REGION} \
+--release-channel rapid --labels mesh_id=proj-${PROJECT_NUMBER} \
+--enable-private-nodes --enable-fleet
+
+gcloud container clusters create-auto \
+${CLUSTER_2_NAME} --region ${CLUSTER_2_REGION} \
+--release-channel rapid --labels mesh_id=proj-${PROJECT_NUMBER} \
+--enable-private-nodes --enable-fleet
+
+gcloud container clusters get-credentials ${CLUSTER_1_NAME} \
+    --region ${CLUSTER_1_REGION}
+
+kubectl config rename-context gke_${PROJECT}_${CLUSTER_1_REGION}_${CLUSTER_1_NAME} ${CLUSTER_1_NAME}
+kubectl config rename-context gke_${PROJECT}_${CLUSTER_2_REGION}_${CLUSTER_2_NAME} ${CLUSTER_2_NAME}
+
+
+```
+
+### environment / context (OLD DON'T USE)
 ```
 export PROJECT=csm001
 export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT} --format="value(projectNumber)")
