@@ -254,6 +254,12 @@ note how requests are being bounced across regions - this isn't typically ideal 
 > note: in the background, i have a GCE VM running the following command from `us-central1`: 
 `hey -n 99999999999999 -c 2 -q 20 https://frontend.endpoints.mesh-demo-01.cloud.goog`
 
+### show environment
+- architecture schematic
+- describe gateway / show in console 
+- describe relationship between managed LB & ingress gateways 
+- describe TLS termination (managed cert via certificate manager @ load balancer + additional TLS on hop between LB & IG to enable HTTP/2)
+
 ### demo HTTP->HTTPS redirect
 
 in a browser, navigate to `http://frontend.endpoints.mesh-demo-01.cloud.goog`
@@ -278,7 +284,9 @@ do
 done
 ```
 
-### tracing demo pt. 1
+### mesh console overview + tracing demo pt. 1
+
+pull up the mesh topology graph, and select a service (frontend is ideal) - show basic telemetry + verify mTLS is enabled for both inbound & outbound calls
 
 check the trace console (or mesh console, which also includes traces) to verify that traces are there - also note that latency is inconsistent due to lack of locality
 
@@ -356,6 +364,19 @@ done
 for i in {1..10}
 do 
     curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
+done
+```
+
+### reset back to beginning
+```
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/traffic-splitting/subsets-dr.yaml
+    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/traffic-splitting/vs-100.yaml
+    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/whereami-backend/v2
+    kubectl --context=$CONTEXT delete -f ${WORKDIR}/locality/
+    kubectl --context=$CONTEXT delete -f ${WORKDIR}/authz/backend.yaml
+    kubectl --context=$CONTEXT delete -k ${WORKDIR}/whereami-backend/variant-v1
 done
 ```
 
