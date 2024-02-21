@@ -261,6 +261,10 @@ do
 done
 ```
 
+### tracing demo pt. 1
+
+check the trace console to verify that traces are there - also note that latency is inconsistent due to lack of locality
+
 ### enable locality
 ```
 # apply destinationRules for locality
@@ -286,6 +290,10 @@ do
     kubectl --context=$CONTEXT -n asm-ingress scale --replicas=3 deployment/asm-ingressgateway
 done
 ```
+
+### tracing demo pt. 12
+
+return to the trace console to see that latency has reduced
 
 ### demo traffic splitting for backend from v1 to v2
 ```
