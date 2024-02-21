@@ -245,9 +245,13 @@ you should see responses from both regions, but only from the frontend service
 watch -n 0.1 'curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq'
 ```
 
+note how requests are being bounced across regions - this isn't typically ideal because it increases latency and increases costs, especially once we add another service
+
 ### demo HTTP->HTTPS redirect
 
-in a browser, navigate to `https://frontend.endpoints.mesh-demo-01.cloud.goog`
+in a browser, navigate to `http://frontend.endpoints.mesh-demo-01.cloud.goog`
+
+notice that browser will be redirected to `https://frontend.endpoints.mesh-demo-01.cloud.goog`
 
 ### deploy demo `whereami` app for backend-v1
 ```
@@ -256,6 +260,8 @@ do
     kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v1
 done
 ```
+
+hmmm, but it isn't working... why? because we have a default `ALLOW NONE` AuthorizationPolicy
 
 ### deploy AuthorizationPolicy for backend workload
 ```
@@ -267,7 +273,9 @@ done
 
 ### tracing demo pt. 1
 
-check the trace console to verify that traces are there - also note that latency is inconsistent due to lack of locality
+check the trace console (or mesh console, which also includes traces) to verify that traces are there - also note that latency is inconsistent due to lack of locality
+
+also point out how the `gce_service_account` reflects a GSA that has tracing access (trace agent, specifically)
 
 ### enable locality
 ```
