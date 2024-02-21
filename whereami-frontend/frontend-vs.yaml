@@ -7,7 +7,7 @@ spec:
   gateways:
   - asm-ingress/asm-ingressgateway
   hosts:
-  - 'frontend.endpoints.csm001.cloud.goog'
+  - 'frontend.endpoints.mesh-demo-01.cloud.goog'
   http:
   - route:
     - destination:

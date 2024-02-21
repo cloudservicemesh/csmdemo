@@ -1,5 +1,19 @@
 # csmdemo
 
+### shortcut to get env vars setup for shell 
+```
+export PROJECT=mesh-demo-01
+export PROJECT_NUMBER=$(gcloud projects describe ${PROJECT} --format="value(projectNumber)")
+gcloud config set project ${PROJECT}
+cd ${HOME}/csmdemo
+export WORKDIR=`pwd`
+export KUBECONFIG=${WORKDIR}/csmdemo_kubeconfig
+gcloud config set accessibility/screen_reader false
+export CLUSTER_1_NAME=edge-to-mesh-01
+export CLUSTER_2_NAME=edge-to-mesh-02
+export PUBLIC_ENDPOINT=frontend.endpoints.${PROJECT}.cloud.goog
+```
+
 ### new environment / context for ASM
 ```
 export PROJECT=mesh-demo-01
@@ -24,7 +38,9 @@ gcloud services enable \
   multiclusteringress.googleapis.com \
   trafficdirector.googleapis.com \
   certificatemanager.googleapis.com \
-  cloudtrace.googleapis.com
+  cloudtrace.googleapis.com \
+  anthos.googleapis.com \
+  servicenetworking.googleapis.com
 
 export CLUSTER_1_NAME=edge-to-mesh-01
 export CLUSTER_2_NAME=edge-to-mesh-02
@@ -213,7 +229,7 @@ do
     kubectl --context=$CONTEXT apply -f ${WORKDIR}/authz/frontend.yaml
 done
 
-# set up virtualService
+# set up frontend virtualService
 for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT apply -f ${WORKDIR}/whereami-frontend/frontend-vs.yaml
