@@ -280,7 +280,7 @@ also point out how the `gce_service_account` reflects a GSA that has tracing acc
 ### enable locality
 ```
 # apply destinationRules for locality
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT apply -f ${WORKDIR}/locality/
 done
@@ -288,24 +288,24 @@ done
 
 > note: after some time, demonstrate delta in trace latency
 
+### tracing demo pt. 2
+
+return to the trace console to see that latency has reduced
+
 ### test resiliency by 'failing' us-central1 ingress gateway pods
 ```
 # first scale to zero to show failover
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 
+for CONTEXT in ${CLUSTER_1_NAME} 
 do 
     kubectl --context=$CONTEXT -n asm-ingress scale --replicas=0 deployment/asm-ingressgateway
 done
 
 # then scale back up to restore ingress gateways in local region
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 
+for CONTEXT in ${CLUSTER_1_NAME}
 do 
     kubectl --context=$CONTEXT -n asm-ingress scale --replicas=3 deployment/asm-ingressgateway
 done
 ```
-
-### tracing demo pt. 2
-
-return to the trace console to see that latency has reduced
 
 ### demo traffic splitting for backend from v1 to v2
 ```
