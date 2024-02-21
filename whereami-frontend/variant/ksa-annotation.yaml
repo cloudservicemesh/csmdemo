@@ -5,4 +5,4 @@ metadata:
     app: whereami
   name: whereami
   annotations:
-    iam.gke.io/gcp-service-account: whereami-tracer@csm001.iam.gserviceaccount.com
+    iam.gke.io/gcp-service-account: whereami-tracer@mesh-demo-01.iam.gserviceaccount.com

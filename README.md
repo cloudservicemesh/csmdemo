@@ -245,9 +245,13 @@ you should see responses from both regions, but only from the frontend service
 watch -n 0.1 'curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq'
 ```
 
+### demo HTTP->HTTPS redirect
+
+in a browser, navigate to `https://frontend.endpoints.mesh-demo-01.cloud.goog`
+
 ### deploy demo `whereami` app for backend-v1
 ```
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v1
 done
@@ -255,7 +259,7 @@ done
 
 ### deploy AuthorizationPolicy for backend workload
 ```
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT apply -f ${WORKDIR}/authz/backend.yaml
 done
@@ -291,20 +295,20 @@ do
 done
 ```
 
-### tracing demo pt. 12
+### tracing demo pt. 2
 
 return to the trace console to see that latency has reduced
 
 ### demo traffic splitting for backend from v1 to v2
 ```
 # start by setting up VS for splitting
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-0.yaml
 done
 
 # deploy v2 of backend service
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v2
 done
@@ -313,38 +317,38 @@ done
 ### scratch 
 ```
 # restart ingress gateway pods
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT -n asm-ingress rollout restart deployment asm-ingressgateway
 done
 
 # restart backend pods
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT -n backend rollout restart deployment whereami-backend
 done
 
 # restart frontend pods
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT -n frontend rollout restart deployment whereami-frontend
 done
 
 # remove backend service
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT delete -k ${WORKDIR}/whereami-backend/variant-v1
 done
 
 # remove PeerAuthentication policy
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT -n frontend delete -f ${WORKDIR}/mtls/
     kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/mtls/
 done
 
 # remove locality 
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT delete -f ${WORKDIR}/locality/
 done
@@ -353,7 +357,7 @@ done
 ### don't use
 ```
 # set strict peer auth (mTLS) policy
-for CONTEXT in gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT -n frontend apply -f ${WORKDIR}/mtls/
     kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/mtls/
