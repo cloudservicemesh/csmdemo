@@ -4,7 +4,7 @@ info:
   title: "Cloud Endpoints DNS"
   version: "1.0.0"
 paths: {}
-host: "frontend.endpoints.csm001.cloud.goog"
+host: "frontend.endpoints.mesh-demo-01.cloud.goog"
 x-google-endpoints:
-- name: "frontend.endpoints.csm001.cloud.goog"
-  target: "34.107.131.238"
+- name: "frontend.endpoints.mesh-demo-01.cloud.goog"
+  target: "34.160.45.224"

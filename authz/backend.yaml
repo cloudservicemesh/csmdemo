@@ -11,7 +11,7 @@ spec:
   rules:
   - from:
     - source:
-        principals: [ "csm001.svc.id.goog/ns/frontend/sa/whereami-frontend" ]
+        principals: [ "mesh-demo-01.svc.id.goog/ns/frontend/sa/whereami-frontend" ]
   - to:
     - operation:
         methods: ["GET"]

@@ -11,7 +11,7 @@ spec:
   rules:
   - from:
     - source:
-        principals: [ "csm001.svc.id.goog/ns/asm-ingress/sa/asm-ingressgateway" ]
+        principals: [ "mesh-demo-01.svc.id.goog/ns/asm-ingress/sa/asm-ingressgateway" ]
   - to:
     - operation:
         methods: ["GET"]
