@@ -11,8 +11,8 @@ spec:
     - destination:
         host: whereami-backend
         subset: v1
-      weight: 100
+      weight: 50
     - destination:
         host: whereami-backend
         subset: v2
-      weight: 0
+      weight: 50
