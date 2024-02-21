@@ -247,6 +247,9 @@ watch -n 0.1 'curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq'
 
 note how requests are being bounced across regions - this isn't typically ideal because it increases latency and increases costs, especially once we add another service
 
+> note: in the background, i have a GCE VM running the following commany from `us-central1`: 
+`hey -n 99999999999999 -q 20 https://frontend.endpoints.mesh-demo-01.cloud.goog`
+
 ### demo HTTP->HTTPS redirect
 
 in a browser, navigate to `http://frontend.endpoints.mesh-demo-01.cloud.goog`
