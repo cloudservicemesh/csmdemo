@@ -51,8 +51,52 @@ gcloud container clusters get-credentials ${CLUSTER_1_NAME} \
 
 kubectl config rename-context gke_${PROJECT}_${CLUSTER_1_REGION}_${CLUSTER_1_NAME} ${CLUSTER_1_NAME}
 kubectl config rename-context gke_${PROJECT}_${CLUSTER_2_REGION}_${CLUSTER_2_NAME} ${CLUSTER_2_NAME}
+```
 
+### enable mesh
+```
+gcloud container fleet mesh enable
 
+gcloud container fleet mesh update \
+    --management automatic \
+    --memberships ${CLUSTER_1_NAME},${CLUSTER_2_NAME}
+```
+
+### deploy GKE Gateway and mesh ingress
+```
+kubectl --context=${CLUSTER_1_NAME} create namespace asm-ingress
+kubectl --context=${CLUSTER_2_NAME} create namespace asm-ingress
+
+kubectl --context=${CLUSTER_1_NAME} label namespace asm-ingress istio-injection=enabled
+kubectl --context=${CLUSTER_2_NAME} label namespace asm-ingress istio-injection=enabled
+
+openssl req -new -newkey rsa:4096 -days 365 -nodes -x509 \
+ -subj "/CN=frontend.endpoints.${PROJECT}.cloud.goog/O=Edge2Mesh Inc" \
+ -keyout ${WORKDIR}/frontend.endpoints.${PROJECT}.cloud.goog.key \
+ -out ${WORKDIR}/frontend.endpoints.${PROJECT}.cloud.goog.crt
+
+kubectl --context ${CLUSTER_1_NAME} -n asm-ingress create secret tls \
+ edge2mesh-credential \
+ --key=${WORKDIR}/frontend.endpoints.${PROJECT}.cloud.goog.key \
+ --cert=${WORKDIR}/frontend.endpoints.${PROJECT}.cloud.goog.crt
+kubectl --context ${CLUSTER_2_NAME} -n asm-ingress create secret tls \
+ edge2mesh-credential \
+ --key=${WORKDIR}/frontend.endpoints.${PROJECT}.cloud.goog.key \
+ --cert=${WORKDIR}/frontend.endpoints.${PROJECT}.cloud.goog.crt
+
+kubectl --context ${CLUSTER_1_NAME} apply -k ${WORKDIR}/asm-ig/variant
+kubectl --context ${CLUSTER_2_NAME} apply -k ${WORKDIR}/asm-ig/variant
+
+gcloud container fleet multi-cluster-services enable
+
+gcloud projects add-iam-policy-binding ${PROJECT} \
+ --member "serviceAccount:${PROJECT}.svc.id.goog[gke-mcs/gke-mcs-importer]" \
+ --role "roles/compute.networkViewer"
+
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do
+    kubectl --context $CONTEXT apply -f ${WORKDIR}/mcs/svc_export.yaml
+done
 ```
 
 ### environment / context (OLD DON'T USE)
@@ -110,7 +154,7 @@ gcloud container clusters get-credentials ${CLUSTER_US_WEST2_B} \
 kubectl config rename-context gke_${PROJECT}_${REGION_2}-b_${CLUSTER_US_WEST2_B} gke-us-west2-1
 ```
 
-### create cluster ingress
+### create cluster ingress (OLD DON'T USE)
 ```
 # namespace setup
 for CONTEXT in gke-config gke-us-central1-0 gke-us-central1-1 gke-us-west2-0 gke-us-west2-1
@@ -125,7 +169,7 @@ do
 done
 ```
 
-### enable MCS
+### enable MCS (OLD DON'T USE)
 ```
 gcloud container fleet multi-cluster-services enable
 
@@ -173,7 +217,7 @@ gcloud certificate-manager maps entries create mcg-cert-map-entry \
     --hostname="frontend.endpoints.csm001.cloud.goog"
 ```
 
-### create policies for LB and apply to clusters
+### create policies for LB and apply to clusters (OLD DON'T USE)
 ```
 gcloud compute security-policies create edge-fw-policy \
     --description "Block XSS attacks"
