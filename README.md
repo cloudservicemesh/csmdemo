@@ -257,6 +257,11 @@ note how requests are being bounced across regions - this isn't typically ideal 
 ### show environment
 - architecture schematic
 - describe gateway / show in console 
+```
+kubectl describe gtw external-http -n asm-ingress
+cat gateway/default-httproute.yaml 
+cat gateway/default-httproute-redirect.yaml 
+```
 - describe relationship between managed LB & ingress gateways 
 - describe TLS termination (managed cert via certificate manager @ load balancer + additional TLS on hop between LB & IG to enable HTTP/2)
 
@@ -275,6 +280,9 @@ done
 ```
 
 hmmm, but it isn't working... why? because we have a default `ALLOW NONE` AuthorizationPolicy
+```
+kubectl get authorizationpolicy -A
+```
 
 ### deploy AuthorizationPolicy for backend workload
 ```
@@ -287,6 +295,7 @@ done
 ### mesh console overview + tracing demo pt. 1
 
 pull up the mesh topology graph, and select a service (frontend is ideal) - show basic telemetry + verify mTLS is enabled for both inbound & outbound calls
+- show KSA in namespace
 
 check the trace console (or mesh console, which also includes traces) to verify that traces are there - also note that latency is inconsistent due to lack of locality
 
