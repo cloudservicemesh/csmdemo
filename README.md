@@ -1,9 +1,5 @@
 # csmdemo
 
-TODO:
-
-- how do we add SLO demo?
-
 ### shortcut to get env vars setup for shell 
 ```
 export PROJECT=mesh-demo-01
@@ -73,6 +69,14 @@ gcloud container clusters get-credentials ${CLUSTER_1_NAME} \
 
 kubectl config rename-context gke_${PROJECT}_${CLUSTER_1_REGION}_${CLUSTER_1_NAME} ${CLUSTER_1_NAME}
 kubectl config rename-context gke_${PROJECT}_${CLUSTER_2_REGION}_${CLUSTER_2_NAME} ${CLUSTER_2_NAME}
+```
+
+### add Cloud Monitoring access to project compute service account
+enables the GKE nodes to write metrics to Cloud Monitoring
+```
+gcloud projects add-iam-policy-binding ${PROJECT} \
+    --member=serviceAccount:${PROJECT_NUMBER}-compute@developer.gserviceaccount.com \
+    --role=roles/monitoring.metricWriter
 ```
 
 ### enable mesh
