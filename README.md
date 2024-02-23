@@ -253,19 +253,6 @@ do
 done
 ```
 
-### enable full observability for GKE clusters (DON'T USE THIS - JUST NEEDED TO ADD MONITORING ROLE TO COMPUTE SA)
-```
-gcloud container clusters update $CLUSTER_1_NAME \
-    --location=$CLUSTER_1_REGION \
-    --logging=SYSTEM,WORKLOAD \
-    --monitoring=SYSTEM,API_SERVER,SCHEDULER,CONTROLLER_MANAGER,STORAGE,POD,DEPLOYMENT,STATEFULSET,DAEMONSET,HPA
-
-gcloud container clusters update $CLUSTER_2_NAME \
-    --location=$CLUSTER_2_REGION \
-    --logging=SYSTEM,WORKLOAD \
-    --monitoring=SYSTEM,API_SERVER,SCHEDULER,CONTROLLER_MANAGER,STORAGE,POD,DEPLOYMENT,STATEFULSET,DAEMONSET,HPA
-```
-
 # DEMO START
 
 ### check endpoint and verify that frontend service is responding
