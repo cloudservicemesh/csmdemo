@@ -242,6 +242,7 @@ done
 
 ### set up balloon pods / extra node capacity
 idea is to create addtional head room in clusters to reduce provisioning time for demo pods
+
 see [this](https://cloud.google.com/kubernetes-engine/docs/how-to/capacity-provisioning) link for more details
 ```
 for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
