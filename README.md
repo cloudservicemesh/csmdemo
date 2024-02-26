@@ -16,6 +16,155 @@ export CLUSTER_2_REGION=us-east4
 export PUBLIC_ENDPOINT=frontend.endpoints.${PROJECT}.cloud.goog
 ```
 
+# DEMO START
+
+### check endpoint and verify that frontend service is responding
+
+you should see responses from both regions, but only from the frontend service
+```
+watch -n 0.1 'curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq'
+```
+
+note how requests are being bounced across regions - this isn't typically ideal because it increases latency and increases costs, especially once we add another service
+
+> note: in the background, i have a GCE VM running the following command from `us-central1`: 
+`hey -n 99999999999999 -c 2 -q 20 https://frontend.endpoints.mesh-demo-01.cloud.goog`
+
+### show environment
+- architecture schematic
+- describe gateway / show in console 
+```
+kubectl describe gtw external-http -n asm-ingress
+cat gateway/default-httproute.yaml 
+cat gateway/default-httproute-redirect.yaml 
+```
+- describe relationship between managed LB & ingress gateways 
+- describe TLS termination (managed cert via certificate manager @ load balancer + additional TLS on hop between LB & IG to enable HTTP/2)
+
+### demo HTTP->HTTPS redirect
+
+in a browser, navigate to `http://frontend.endpoints.mesh-demo-01.cloud.goog`
+
+notice that browser will be redirected to `https://frontend.endpoints.mesh-demo-01.cloud.goog`
+
+### deploy demo `whereami` app for backend-v1
+```
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v1
+done
+```
+
+hmmm, but it isn't working... why? because we have a default `ALLOW NONE` AuthorizationPolicy
+```
+kubectl get authorizationpolicy -A
+```
+
+### deploy AuthorizationPolicy for backend workload
+```
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT apply -f ${WORKDIR}/authz/backend.yaml
+done
+```
+
+### mesh console overview + tracing demo pt. 1
+
+pull up the mesh topology graph, and select a service (frontend is ideal) - show basic telemetry + verify mTLS is enabled for both inbound & outbound calls
+- show KSA in namespace
+
+check the trace console (or mesh console, which also includes traces) to verify that traces are there - also note that latency is inconsistent due to lack of locality
+
+also point out how the `gce_service_account` reflects a GSA that has tracing access (trace agent, specifically)
+
+### enable locality
+```
+# apply destinationRules for locality
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT apply -f ${WORKDIR}/locality/
+done
+```
+
+> note: after some time, demonstrate delta in trace latency
+
+### tracing demo pt. 2
+
+return to the trace console to see that latency has reduced
+
+### test resiliency by 'failing' us-central1 ingress gateway pods
+```
+# first scale to zero to show failover
+for CONTEXT in ${CLUSTER_1_NAME} 
+do 
+    kubectl --context=$CONTEXT -n asm-ingress scale --replicas=0 deployment/asm-ingressgateway
+done
+
+# then scale back up to restore ingress gateways in local region
+for CONTEXT in ${CLUSTER_1_NAME}
+do 
+    kubectl --context=$CONTEXT -n asm-ingress scale --replicas=3 deployment/asm-ingressgateway
+done
+```
+
+### demo traffic splitting for backend from v1 to v2
+```
+# start by setting up VS & DR for splitting using subsets
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/subsets-dr.yaml
+    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-0.yaml
+done
+
+# deploy v2 of backend service
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT apply -f ${WORKDIR}/whereami-backend/v2
+done
+
+# check backend metadata a few times to see that it's still all v1
+for i in {1..10}
+do 
+    curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
+done
+
+# change to 50/50 splitting
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-50.yaml
+done
+
+# check backend metadata again, and notice that roughly it's 50/50 between v1 and v2
+for i in {1..10}
+do 
+    curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
+done
+
+# now jump to all v2 and verify
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-100.yaml
+done
+
+for i in {1..10}
+do 
+    curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
+done
+```
+
+### reset back to beginning
+```
+for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
+do 
+    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/traffic-splitting/subsets-dr.yaml
+    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/traffic-splitting/vs-100.yaml
+    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/whereami-backend/v2
+    kubectl --context=$CONTEXT delete -f ${WORKDIR}/locality/
+    kubectl --context=$CONTEXT delete -f ${WORKDIR}/authz/backend.yaml
+    kubectl --context=$CONTEXT delete -k ${WORKDIR}/whereami-backend/variant-v1
+done
+```
+
 ### new environment / context for ASM
 ```
 export PROJECT=mesh-demo-01
@@ -254,155 +403,6 @@ see [this](https://cloud.google.com/kubernetes-engine/docs/how-to/capacity-provi
 for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT apply -f ${WORKDIR}/balloon-pods/
-done
-```
-
-# DEMO START
-
-### check endpoint and verify that frontend service is responding
-
-you should see responses from both regions, but only from the frontend service
-```
-watch -n 0.1 'curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq'
-```
-
-note how requests are being bounced across regions - this isn't typically ideal because it increases latency and increases costs, especially once we add another service
-
-> note: in the background, i have a GCE VM running the following command from `us-central1`: 
-`hey -n 99999999999999 -c 2 -q 20 https://frontend.endpoints.mesh-demo-01.cloud.goog`
-
-### show environment
-- architecture schematic
-- describe gateway / show in console 
-```
-kubectl describe gtw external-http -n asm-ingress
-cat gateway/default-httproute.yaml 
-cat gateway/default-httproute-redirect.yaml 
-```
-- describe relationship between managed LB & ingress gateways 
-- describe TLS termination (managed cert via certificate manager @ load balancer + additional TLS on hop between LB & IG to enable HTTP/2)
-
-### demo HTTP->HTTPS redirect
-
-in a browser, navigate to `http://frontend.endpoints.mesh-demo-01.cloud.goog`
-
-notice that browser will be redirected to `https://frontend.endpoints.mesh-demo-01.cloud.goog`
-
-### deploy demo `whereami` app for backend-v1
-```
-for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
-do 
-    kubectl --context=$CONTEXT apply -k ${WORKDIR}/whereami-backend/variant-v1
-done
-```
-
-hmmm, but it isn't working... why? because we have a default `ALLOW NONE` AuthorizationPolicy
-```
-kubectl get authorizationpolicy -A
-```
-
-### deploy AuthorizationPolicy for backend workload
-```
-for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
-do 
-    kubectl --context=$CONTEXT apply -f ${WORKDIR}/authz/backend.yaml
-done
-```
-
-### mesh console overview + tracing demo pt. 1
-
-pull up the mesh topology graph, and select a service (frontend is ideal) - show basic telemetry + verify mTLS is enabled for both inbound & outbound calls
-- show KSA in namespace
-
-check the trace console (or mesh console, which also includes traces) to verify that traces are there - also note that latency is inconsistent due to lack of locality
-
-also point out how the `gce_service_account` reflects a GSA that has tracing access (trace agent, specifically)
-
-### enable locality
-```
-# apply destinationRules for locality
-for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
-do 
-    kubectl --context=$CONTEXT apply -f ${WORKDIR}/locality/
-done
-```
-
-> note: after some time, demonstrate delta in trace latency
-
-### tracing demo pt. 2
-
-return to the trace console to see that latency has reduced
-
-### test resiliency by 'failing' us-central1 ingress gateway pods
-```
-# first scale to zero to show failover
-for CONTEXT in ${CLUSTER_1_NAME} 
-do 
-    kubectl --context=$CONTEXT -n asm-ingress scale --replicas=0 deployment/asm-ingressgateway
-done
-
-# then scale back up to restore ingress gateways in local region
-for CONTEXT in ${CLUSTER_1_NAME}
-do 
-    kubectl --context=$CONTEXT -n asm-ingress scale --replicas=3 deployment/asm-ingressgateway
-done
-```
-
-### demo traffic splitting for backend from v1 to v2
-```
-# start by setting up VS & DR for splitting using subsets
-for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
-do 
-    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/subsets-dr.yaml
-    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-0.yaml
-done
-
-# deploy v2 of backend service
-for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
-do 
-    kubectl --context=$CONTEXT apply -f ${WORKDIR}/whereami-backend/v2
-done
-
-# check backend metadata a few times to see that it's still all v1
-for i in {1..10}
-do 
-    curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
-done
-
-# change to 50/50 splitting
-for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
-do 
-    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-50.yaml
-done
-
-# check backend metadata again, and notice that roughly it's 50/50 between v1 and v2
-for i in {1..10}
-do 
-    curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
-done
-
-# now jump to all v2 and verify
-for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
-do 
-    kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-100.yaml
-done
-
-for i in {1..10}
-do 
-    curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
-done
-```
-
-### reset back to beginning
-```
-for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
-do 
-    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/traffic-splitting/subsets-dr.yaml
-    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/traffic-splitting/vs-100.yaml
-    kubectl --context=$CONTEXT -n backend delete -f ${WORKDIR}/whereami-backend/v2
-    kubectl --context=$CONTEXT delete -f ${WORKDIR}/locality/
-    kubectl --context=$CONTEXT delete -f ${WORKDIR}/authz/backend.yaml
-    kubectl --context=$CONTEXT delete -k ${WORKDIR}/whereami-backend/variant-v1
 done
 ```
 
