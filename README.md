@@ -118,37 +118,43 @@ do
     kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/subsets-dr.yaml
     kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-0.yaml
 done
-
+```
+```
 # deploy v2 of backend service
 for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT apply -f ${WORKDIR}/whereami-backend/v2
 done
-
+```
+```
 # check backend metadata a few times to see that it's still all v1
 for i in {1..10}
 do 
     curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
 done
-
+```
+```
 # change to 50/50 splitting
 for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-50.yaml
 done
-
+```
+```
 # check backend metadata again, and notice that roughly it's 50/50 between v1 and v2
 for i in {1..10}
 do 
     curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
 done
-
+```
+```
 # now jump to all v2 and verify
 for CONTEXT in ${CLUSTER_1_NAME} ${CLUSTER_2_NAME}
 do 
     kubectl --context=$CONTEXT -n backend apply -f ${WORKDIR}/traffic-splitting/vs-100.yaml
 done
-
+```
+```
 for i in {1..10}
 do 
     curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq '.backend_result.metadata'
