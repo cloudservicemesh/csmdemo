@@ -28,7 +28,9 @@ watch -n 0.1 'curl -s https://frontend.endpoints.${PROJECT}.cloud.goog | jq'
 note how requests are being bounced across regions - this isn't typically ideal because it increases latency and increases costs, especially once we add another service
 
 > note: in the background, i have a GCE VM running the following command from `us-central1`: 
-`hey -n 99999999999999 -c 2 -q 20 https://frontend.endpoints.mesh-demo-01.cloud.goog`
+```
+hey -n 99999999999999 -c 2 -q 20 https://frontend.endpoints.mesh-demo-01.cloud.goog
+```
 
 ### show environment
 - architecture schematic
@@ -99,7 +101,8 @@ for CONTEXT in ${CLUSTER_1_NAME}
 do 
     kubectl --context=$CONTEXT -n asm-ingress scale --replicas=0 deployment/asm-ingressgateway
 done
-
+```
+```
 # then scale back up to restore ingress gateways in local region
 for CONTEXT in ${CLUSTER_1_NAME}
 do 
